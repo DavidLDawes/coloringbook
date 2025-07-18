@@ -11,9 +11,9 @@ import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PictureDrawable;
 import android.os.AsyncTask;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v7.widget.AppCompatImageView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.AppCompatImageView;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.ImageView;
@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import ml.fomi.apps.coloringbook.db.SectorsDAO;
+import ml.formi.apps.R;
 
 /**
  * Created by Rius on 29.03.17.
@@ -287,7 +288,7 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
     }
 
     public Bitmap getShareBitmap(Drawable drawable) {
-        int w = getResources().getDimensionPixelSize(R.dimen.share_image_width_px);
+        int w = getResources().getDimensionPixelSize(ml.formi.apps.R.dimen.share_image_width_px);
         int iw = drawable.getIntrinsicWidth();
         int ih = drawable.getIntrinsicHeight();
         float ar = (float) iw / w;
