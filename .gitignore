@@ -91,6 +91,5 @@ fabric.properties
 /photoview/build/
 /vectorimage/.idea/
 /vectorimage/build/
-/gradlew
 /.idea/
 /app/libs/
