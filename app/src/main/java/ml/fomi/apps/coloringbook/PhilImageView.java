@@ -9,21 +9,27 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Environment;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import com.github.DavidLDawes.photoview.OnMatrixChangedListener;
+import com.github.DavidLDawes.photoview.OnPhotoTapListener;
+import com.github.DavidLDawes.photoview.PhotoView;
+import com.github.DavidLDawes.photoview.PhotoViewAttacher;
 import java.io.File;
 import java.io.FileOutputStream;
 
 import ml.fomi.apps.coloringbook.db.DataBaseHelper;
 import ml.fomi.apps.coloringbook.db.SectorsDAO;
-import uk.co.senab.photoview.PhotoViewAttacher;
 
 /**
  * Created by buz on 17.06.16.
  * Central image
  */
-public class PhilImageView extends VectorImageView implements PhotoViewAttacher.OnPhotoTapListener, VectorImageView.OnImageCallbackListener, PhotoViewAttacher.OnMatrixChangedListener {
+public class PhilImageView extends VectorImageView implements PhotoView
+
+        .OnTouchListener, VectorImageView.OnImageCallbackListener, OnMatrixChangedListener {
 
     private PhotoViewAttacher photoViewAttacher;
     private PhilImageView philImageView;
@@ -71,7 +77,7 @@ public class PhilImageView extends VectorImageView implements PhotoViewAttacher.
         photoViewAttacher.getDisplayMatrix(curMatrix);
         photoViewAttacher.setMaximumScale(18);
         photoViewAttacher.setMediumScale(6);
-        photoViewAttacher.setOnPhotoTapListener(philImageView);
+        //photoViewAttacher.setOnPhotoTapListener(philImageView.setOnTouchListener(););
         photoViewAttacher.setOnMatrixChangeListener(philImageView);
 
         paint = new Paint();
@@ -83,22 +89,6 @@ public class PhilImageView extends VectorImageView implements PhotoViewAttacher.
     @Override
     public void initThis() {
         philImageView = this;
-    }
-
-    @Override
-    public void onPhotoTap(View view, float x, float y) {
-        curSector = getSector(x, y);
-        prevColor = getColorFromSector(curSector);
-        if (curSector != 0xFFFFFFFF) {
-            curColor = getOnImageCommandsListener().getCurrentColor();
-            setSectorColor(curSector, curColor);
-            updatePicture();
-            philImageView.invalidate();
-        }
-    }
-
-    @Override
-    public void onOutsidePhotoTap() {
     }
 
     public void undoColor() {
@@ -153,5 +143,10 @@ public class PhilImageView extends VectorImageView implements PhotoViewAttacher.
     @Override
     public void onMatrixChanged(RectF rect) {
         photoViewAttacher.getDisplayMatrix(curMatrix);
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        return false;
     }
 }

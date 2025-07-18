@@ -1,0 +1,84 @@
+apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'
+
+android {
+    namespace "com.github.DavidLDawes"
+    compileSdkVersion 36
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 36
+    }
+    buildToolsVersion '36.0.0'
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                group = 'io.jitpack'
+                artifactId = 'library'
+                version = '2.3.0'
+
+                // Adds javadocs and sources as separate jars.
+                artifact androidJavadocsJar
+                artifact(sourceJar)
+
+                pom {
+                    name = 'PhotoView'
+                    description = 'A simple ImageView that support zooming, both by Multi-touch gestures and double-tap.'
+                    url = 'https://github.com/DavidLDawes/PhotoView'
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'DavidLDawes'
+                            name = 'David L. Dawes'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git@github.com/DavidLDawes/PhotoView.git'
+                        developerConnection = 'scm:git@github.com/DavidLDawes/PhotoView.git'
+                        url = 'https://github.com/DavidLDawes/PhotoView'
+                    }
+                }
+            }
+        }
+    }
+}
+
+tasks.register('androidJavadocs', Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    android.libraryVariants.configureEach { variant ->
+        if (variant.name == 'release') {
+            owner.classpath += variant.javaCompileProvider.get().classpath
+        }
+    }
+    exclude '**/R.html', '**/R.*.html', '**/index.html'
+}
+
+tasks.register('androidJavadocsJar', Jar) {
+    dependsOn androidJavadocs
+    archiveClassifier.set('javadoc')
+    from androidJavadocs.destinationDir
+}
+
+tasks.register('sourceJar', Jar) {
+    from android.sourceSets.main.java.srcDirs
+    archiveClassifier.set("sources")
+}
