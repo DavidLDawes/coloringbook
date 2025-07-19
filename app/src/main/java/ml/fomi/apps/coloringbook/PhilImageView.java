@@ -157,6 +157,15 @@ public class PhilImageView extends VectorImageView implements PhotoView
         // Handle photo tap - can be used to trigger coloring at the tapped location
         // x and y are percentages (0.0 to 1.0) of the drawable dimensions
         int sect = getSector(x, y);
+        if (sect >= 0) {  // Valid sector
+            Log.d(TAG, "onPhotoTap: Sector: " + sect);
+            setSectorColor(sect, curColor);
+            this.updatePicture();
+        } else {
+            Log.d(TAG, "onPhotoTap: Invalid sector at (" + x + ", " + y + ")");
+        }
+
+
         Log.d(TAG, "onPhotoTap: Sector: " + sect);
         setSectorColor(sect, -1);
         this.updatePicture();
