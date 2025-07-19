@@ -29,7 +29,7 @@ import ml.fomi.apps.coloringbook.db.SectorsDAO;
  */
 public class PhilImageView extends VectorImageView implements PhotoView
 
-        .OnTouchListener, VectorImageView.OnImageCallbackListener, OnMatrixChangedListener {
+        .OnTouchListener, VectorImageView.OnImageCallbackListener, OnMatrixChangedListener, OnPhotoTapListener {
 
     private PhotoViewAttacher photoViewAttacher;
     private PhilImageView philImageView;
@@ -77,7 +77,7 @@ public class PhilImageView extends VectorImageView implements PhotoView
         photoViewAttacher.getDisplayMatrix(curMatrix);
         photoViewAttacher.setMaximumScale(18);
         photoViewAttacher.setMediumScale(6);
-        //photoViewAttacher.setOnPhotoTapListener(philImageView.setOnTouchListener(););
+        photoViewAttacher.setOnPhotoTapListener(philImageView);
         photoViewAttacher.setOnMatrixChangeListener(philImageView);
 
         paint = new Paint();
@@ -148,5 +148,11 @@ public class PhilImageView extends VectorImageView implements PhotoView
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         return false;
+    }
+
+    @Override
+    public void onPhotoTap(android.widget.ImageView view, float x, float y) {
+        // Handle photo tap - can be used to trigger coloring at the tapped location
+        // x and y are percentages (0.0 to 1.0) of the drawable dimensions
     }
 }
