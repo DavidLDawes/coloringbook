@@ -27,9 +27,9 @@ import ml.fomi.apps.coloringbook.db.SectorsDAO;
  * Created by buz on 17.06.16.
  * Central image
  */
-public class PhilImageView extends VectorImageView implements PhotoView
-
-        .OnTouchListener, VectorImageView.OnImageCallbackListener, OnMatrixChangedListener {
+public class PhilImageView extends VectorImageView implements PhotoViewAttacher.OnPhotoTapListener,
+        PhotoView.OnTouchListener,
+        VectorImageView.OnImageCallbackListener, OnMatrixChangedListener {
 
     private PhotoViewAttacher photoViewAttacher;
     private PhilImageView philImageView;
@@ -77,7 +77,7 @@ public class PhilImageView extends VectorImageView implements PhotoView
         photoViewAttacher.getDisplayMatrix(curMatrix);
         photoViewAttacher.setMaximumScale(18);
         photoViewAttacher.setMediumScale(6);
-        //photoViewAttacher.setOnPhotoTapListener(philImageView.setOnTouchListener(););
+        photoViewAttacher.setOnPhotoTapListener((OnPhotoTapListener) philImageView);
         photoViewAttacher.setOnMatrixChangeListener(philImageView);
 
         paint = new Paint();
