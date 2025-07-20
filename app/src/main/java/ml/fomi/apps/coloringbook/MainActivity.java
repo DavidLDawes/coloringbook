@@ -115,8 +115,6 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
         centerImageView = findViewById(R.id.imageView_center);
         centerImageView.loadAsset("Gerald_G_Beach_Trip_2.svg");
-        // centerImageView.setScaleX(1.25f);
-        // centerImageView.setScaleY(1.25f);
         centerImageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 
         centerImageView.setOnImageCommandsListener(brushImageView);
@@ -320,7 +318,9 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
                     // Convert 0-100 range back to actual scale
                     float scale = minScale + (progress / 100.0f) * (maxScale - minScale);
                     valueLabel.setText(String.format("%.1fx", scale));
-                    centerImageView.getPhotoViewAttacher().setScale(scale, true);
+                    centerImageView.setScaleX(scale);
+                    centerImageView.setScaleY(scale);
+                    centerImageView.updatePicture();
                 }
             }
 
