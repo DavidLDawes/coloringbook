@@ -164,10 +164,5 @@ public class PhilImageView extends VectorImageView implements PhotoView
         } else {
             Log.d(TAG, "onPhotoTap: Invalid sector at (" + x + ", " + y + ")");
         }
-
-
-        Log.d(TAG, "onPhotoTap: Sector: " + sect);
-        setSectorColor(sect, -1);
-        this.updatePicture();
     }
 }
