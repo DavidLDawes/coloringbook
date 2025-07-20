@@ -9,6 +9,7 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Environment;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -31,6 +32,7 @@ public class PhilImageView extends VectorImageView implements PhotoView
 
         .OnTouchListener, VectorImageView.OnImageCallbackListener, OnMatrixChangedListener, OnPhotoTapListener {
 
+    private static final String TAG = "PhilImageView";
     private PhotoViewAttacher photoViewAttacher;
     private PhilImageView philImageView;
 
@@ -154,5 +156,13 @@ public class PhilImageView extends VectorImageView implements PhotoView
     public void onPhotoTap(android.widget.ImageView view, float x, float y) {
         // Handle photo tap - can be used to trigger coloring at the tapped location
         // x and y are percentages (0.0 to 1.0) of the drawable dimensions
+        int sect = getSector(x, y);
+        if (sect >= 0) {  // Valid sector
+            Log.d(TAG, "onPhotoTap: Sector: " + sect);
+            setSectorColor(sect, curColor);
+            this.updatePicture();
+        } else {
+            Log.d(TAG, "onPhotoTap: Invalid sector at (" + x + ", " + y + ")");
+        }
     }
 }
