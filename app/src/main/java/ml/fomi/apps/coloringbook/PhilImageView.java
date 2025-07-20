@@ -159,7 +159,7 @@ public class PhilImageView extends VectorImageView implements PhotoView
         int sect = getSector(x, y);
         if (sect >= 0) {  // Valid sector
             Log.d(TAG, "onPhotoTap: Sector: " + sect);
-            setSectorColor(sect, curColor);
+            setSectorColor(sect, getOnImageCommandsListener().getCurrentColor());
             this.updatePicture();
         } else {
             Log.d(TAG, "onPhotoTap: Invalid sector at (" + x + ", " + y + ")");
