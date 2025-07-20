@@ -1,5 +1,5 @@
 
-include ':app', ':photview', ':vectimage'
+include ':app', ':vectimage'
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)

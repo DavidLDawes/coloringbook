@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         brushImageView.loadAsset("brush7.svg");
 
         centerImageView = findViewById(R.id.imageView_center);
-        centerImageView.loadAsset("ul.svg");
+        centerImageView.loadAsset("Gerald_G_Beach_Trip_2.svg");
 
         centerImageView.setOnImageCommandsListener(brushImageView);
         centerImageView.setOnImageCallbackListener(centerImageView);
