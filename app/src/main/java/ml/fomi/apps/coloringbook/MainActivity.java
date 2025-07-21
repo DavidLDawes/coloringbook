@@ -52,8 +52,6 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         getSupportActionBar().setLogo(R.mipmap.ic_launcher);
         getSupportActionBar().setDisplayUseLogoEnabled(true);
 
-        TextView textViewLeftBlack = findViewById(R.id.textView_black);
-        TextView textViewLeftWhite = findViewById(R.id.textView_white);
         imageViewLeft = findViewById(R.id.imageView_left);
 
         final GradientDrawable drawableLeft = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
@@ -93,12 +91,6 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
         imageViewLeft.setOnTouchListener(this);
 
-        assert textViewLeftWhite != null;
-        textViewLeftWhite.setOnTouchListener(this);
-
-        assert textViewLeftBlack != null;
-        textViewLeftBlack.setOnTouchListener(this);
-
         brushImageView = findViewById(R.id.imageView_brush);
         brushImageView.loadAsset("brush7.svg");
 
@@ -133,16 +125,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
             if (y >= 0 && y < yImg && x >= 0 && x < xImg) {
 
                 if (v instanceof ImageView) {
-
                     currentPixelColor = v.getDrawingCache().getPixel(x, y);
-
-                } else if (v instanceof TextView) {
-                    //TextView section
-                    if (((TextView) v).getText().toString().equals("B"))
-                        currentPixelColor = Color.BLACK;
-
-                    if (((TextView) v).getText().toString().equals("W"))
-                        currentPixelColor = Color.WHITE;
                 }
 
                 brushImageView.pushColor(currentPixelColor);
@@ -348,6 +331,49 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         label.setText(R.string.select_gray);
         layout.addView(label);
 
+        // Add black and white buttons at the top
+        LinearLayout buttonLayout = new LinearLayout(this);
+        buttonLayout.setOrientation(LinearLayout.HORIZONTAL);
+        buttonLayout.setPadding(0, 20, 0, 10);
+
+        // Black button
+        TextView blackButton = new TextView(this);
+        blackButton.setText("B");
+        blackButton.setBackgroundColor(Color.BLACK);
+        blackButton.setTextColor(Color.WHITE);
+        blackButton.setGravity(android.view.Gravity.CENTER);
+        blackButton.setPadding(20, 20, 20, 20);
+        blackButton.setTextSize(16);
+        LinearLayout.LayoutParams blackParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        blackParams.setMargins(0, 0, 10, 0);
+        blackButton.setLayoutParams(blackParams);
+        blackButton.setOnClickListener(v -> {
+            currentPixelColor = Color.BLACK;
+            brushImageView.pushColor(currentPixelColor);
+            updateLeftGradient();
+        });
+
+        // White button
+        TextView whiteButton = new TextView(this);
+        whiteButton.setText("W");
+        whiteButton.setBackgroundColor(Color.WHITE);
+        whiteButton.setTextColor(Color.BLACK);
+        whiteButton.setGravity(android.view.Gravity.CENTER);
+        whiteButton.setPadding(20, 20, 20, 20);
+        whiteButton.setTextSize(16);
+        LinearLayout.LayoutParams whiteParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        whiteParams.setMargins(10, 0, 0, 0);
+        whiteButton.setLayoutParams(whiteParams);
+        whiteButton.setOnClickListener(v -> {
+            currentPixelColor = Color.WHITE;
+            brushImageView.pushColor(currentPixelColor);
+            updateLeftGradient();
+        });
+
+        buttonLayout.addView(blackButton);
+        buttonLayout.addView(whiteButton);
+        layout.addView(buttonLayout);
+
         // Create the gray gradient ImageView
         ImageView grayGradient = new ImageView(this);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
@@ -373,15 +399,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
                 if (x >= 0 && x < v.getWidth() && y >= 0 && y < v.getHeight()) {
                     currentPixelColor = grayGradient.getDrawingCache().getPixel(x, y);
                     brushImageView.pushColor(currentPixelColor);
-                    
-                    // Update the left gradient with the selected color
-                    imageViewLeft.setDrawingCacheEnabled(false);
-                    final GradientDrawable drawableLeft = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
-                            new int[]{0xFF000000, currentPixelColor, 0xFFFFFFFF});
-                    drawableLeft.setShape(GradientDrawable.RECTANGLE);
-                    drawableLeft.setGradientType(GradientDrawable.LINEAR_GRADIENT);
-                    imageViewLeft.setImageDrawable(drawableLeft);
-                    imageViewLeft.setDrawingCacheEnabled(true);
+                    updateLeftGradient();
                 }
             }
             return true;
@@ -392,5 +410,15 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         builder.setView(layout);
         builder.setPositiveButton("OK", null);
         builder.show();
+    }
+
+    private void updateLeftGradient() {
+        imageViewLeft.setDrawingCacheEnabled(false);
+        final GradientDrawable drawableLeft = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
+                new int[]{0xFF000000, currentPixelColor, 0xFFFFFFFF});
+        drawableLeft.setShape(GradientDrawable.RECTANGLE);
+        drawableLeft.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        imageViewLeft.setImageDrawable(drawableLeft);
+        imageViewLeft.setDrawingCacheEnabled(true);
     }
 }
