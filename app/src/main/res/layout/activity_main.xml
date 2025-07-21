@@ -51,13 +51,6 @@
                 android:text="@string/b"
                 android:textColor="@android:color/white" />
 
-            <ImageView
-                android:id="@+id/imageView_gray"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="25"
-                android:background="@android:color/darker_gray"
-                tools:ignore="ContentDescription" />
 
             <TextView
                 android:id="@+id/textView_white"
@@ -73,7 +66,7 @@
                 android:id="@+id/imageView_left"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="75"
+                android:layout_weight="100"
                 android:background="#ff0000"
                 tools:ignore="ContentDescription" />
 

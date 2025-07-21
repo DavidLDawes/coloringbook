@@ -53,17 +53,8 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         getSupportActionBar().setDisplayUseLogoEnabled(true);
 
         TextView textViewLeftBlack = findViewById(R.id.textView_black);
-        ImageView imageViewGray = findViewById(R.id.imageView_gray);
         TextView textViewLeftWhite = findViewById(R.id.textView_white);
         imageViewLeft = findViewById(R.id.imageView_left);
-
-
-        final GradientDrawable drawableGray = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
-                new int[]{0xFF000000, 0xFFFFFFFF});
-        drawableGray.setShape(GradientDrawable.RECTANGLE);
-        drawableGray.setGradientType(GradientDrawable.LINEAR_GRADIENT);
-        imageViewGray.setImageDrawable(drawableGray);
-        imageViewGray.setDrawingCacheEnabled(true);
 
         final GradientDrawable drawableLeft = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
                 new int[]{0xFF000000, 0xFF00FF00, 0xFFFFFFFF});
@@ -107,8 +98,6 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
         assert textViewLeftBlack != null;
         textViewLeftBlack.setOnTouchListener(this);
-
-        imageViewGray.setOnTouchListener(this);
 
         brushImageView = findViewById(R.id.imageView_brush);
         brushImageView.loadAsset("brush7.svg");
@@ -214,6 +203,9 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
             return true;
         } else if (itemId == R.id.action_zoom) {
             showZoomDialog();
+            return true;
+        } else if (itemId == R.id.action_gray_colors) {
+            showGrayColorsDialog();
             return true;
         } else if (itemId == R.id.action_about) {
             AboutWindow();
@@ -340,6 +332,65 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
             centerImageView.getPhotoViewAttacher().setScale(minScale, true);
         });
 
+        builder.show();
+    }
+
+    public void showGrayColorsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Gray Colors");
+
+        // Create the layout for the gray gradient
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 40, 50, 10);
+
+        TextView label = new TextView(this);
+        label.setText(R.string.select_gray);
+        layout.addView(label);
+
+        // Create the gray gradient ImageView
+        ImageView grayGradient = new ImageView(this);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 200);
+        params.setMargins(0, 20, 0, 20);
+        grayGradient.setLayoutParams(params);
+
+        // Create the gray gradient drawable (same as original)
+        final GradientDrawable drawableGray = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
+                new int[]{0xFF000000, 0xFFFFFFFF});
+        drawableGray.setShape(GradientDrawable.RECTANGLE);
+        drawableGray.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        grayGradient.setImageDrawable(drawableGray);
+        grayGradient.setDrawingCacheEnabled(true);
+
+        // Add touch listener to handle color selection
+        grayGradient.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_MOVE) {
+                int x = (int) event.getX();
+                int y = (int) event.getY();
+                
+                // Ensure coordinates are within bounds
+                if (x >= 0 && x < v.getWidth() && y >= 0 && y < v.getHeight()) {
+                    currentPixelColor = grayGradient.getDrawingCache().getPixel(x, y);
+                    brushImageView.pushColor(currentPixelColor);
+                    
+                    // Update the left gradient with the selected color
+                    imageViewLeft.setDrawingCacheEnabled(false);
+                    final GradientDrawable drawableLeft = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
+                            new int[]{0xFF000000, currentPixelColor, 0xFFFFFFFF});
+                    drawableLeft.setShape(GradientDrawable.RECTANGLE);
+                    drawableLeft.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+                    imageViewLeft.setImageDrawable(drawableLeft);
+                    imageViewLeft.setDrawingCacheEnabled(true);
+                }
+            }
+            return true;
+        });
+
+        layout.addView(grayGradient);
+
+        builder.setView(layout);
+        builder.setPositiveButton("OK", null);
         builder.show();
     }
 }

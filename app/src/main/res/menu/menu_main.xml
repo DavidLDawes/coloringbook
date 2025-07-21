@@ -37,6 +37,12 @@
         app:showAsAction="collapseActionView" />
 
     <item
+        android:id="@+id/action_gray_colors"
+        android:orderInCategory="127"
+        android:title="@string/gray_colors"
+        app:showAsAction="collapseActionView" />
+
+    <item
         android:id="@+id/action_about"
         android:orderInCategory="130"
         android:title="@string/about_header"

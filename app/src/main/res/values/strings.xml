@@ -8,10 +8,12 @@
     <string name="clear_all">Clear all</string>
     <string name="color_white_cells">Color white cells</string>
     <string name="zoom">Zoom</string>
+    <string name="gray_colors">Gray Colors</string>
     <string name="logo_image_description">Logo image</string>
     <string name="double_tap_for_zooming">Double tap on the image for zooming</string>
     <string name="help_image_description">Help image showing a finger tapping</string>
     <string name="new_checkbox">Show on start</string>
+    <string name="select_gray">Select a gray color:</string>
     <string-array name="text_about">
         <item>Coloring book\n</item>
         <item>@string/app_name</item>
