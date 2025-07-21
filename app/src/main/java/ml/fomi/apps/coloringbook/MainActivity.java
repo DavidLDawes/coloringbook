@@ -318,9 +318,9 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
                     // Convert 0-100 range back to actual scale
                     float scale = minScale + (progress / 100.0f) * (maxScale - minScale);
                     valueLabel.setText(String.format("%.1fx", scale));
-                    centerImageView.setScaleX(scale);
-                    centerImageView.setScaleY(scale);
+                    centerImageView.getPhotoViewAttacher().setScale(scale, true);
                     centerImageView.updatePicture();
+                    centerImageView.getPhotoViewAttacher().update();
                 }
             }
 
