@@ -21,6 +21,7 @@ import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,18 +52,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         getSupportActionBar().setLogo(R.mipmap.ic_launcher);
         getSupportActionBar().setDisplayUseLogoEnabled(true);
 
-        TextView textViewLeftBlack = findViewById(R.id.textView_black);
-        ImageView imageViewGray = findViewById(R.id.imageView_gray);
-        TextView textViewLeftWhite = findViewById(R.id.textView_white);
         imageViewLeft = findViewById(R.id.imageView_left);
-
-
-        final GradientDrawable drawableGray = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
-                new int[]{0xFF000000, 0xFFFFFFFF});
-        drawableGray.setShape(GradientDrawable.RECTANGLE);
-        drawableGray.setGradientType(GradientDrawable.LINEAR_GRADIENT);
-        imageViewGray.setImageDrawable(drawableGray);
-        imageViewGray.setDrawingCacheEnabled(true);
 
         final GradientDrawable drawableLeft = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
                 new int[]{0xFF000000, 0xFF00FF00, 0xFFFFFFFF});
@@ -101,19 +91,12 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
         imageViewLeft.setOnTouchListener(this);
 
-        assert textViewLeftWhite != null;
-        textViewLeftWhite.setOnTouchListener(this);
-
-        assert textViewLeftBlack != null;
-        textViewLeftBlack.setOnTouchListener(this);
-
-        imageViewGray.setOnTouchListener(this);
-
         brushImageView = findViewById(R.id.imageView_brush);
         brushImageView.loadAsset("brush7.svg");
 
         centerImageView = findViewById(R.id.imageView_center);
         centerImageView.loadAsset("Gerald_G_Beach_Trip_2.svg");
+        centerImageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 
         centerImageView.setOnImageCommandsListener(brushImageView);
         centerImageView.setOnImageCallbackListener(centerImageView);
@@ -142,16 +125,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
             if (y >= 0 && y < yImg && x >= 0 && x < xImg) {
 
                 if (v instanceof ImageView) {
-
                     currentPixelColor = v.getDrawingCache().getPixel(x, y);
-
-                } else if (v instanceof TextView) {
-                    //TextView section
-                    if (((TextView) v).getText().toString().equals("B"))
-                        currentPixelColor = Color.BLACK;
-
-                    if (((TextView) v).getText().toString().equals("W"))
-                        currentPixelColor = Color.WHITE;
                 }
 
                 brushImageView.pushColor(currentPixelColor);
@@ -209,6 +183,12 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
                         Toast.makeText(MainActivity.this, "All white cells colored!", Toast.LENGTH_SHORT).show();
                     })
                     .setNegativeButton(android.R.string.no, null).show();
+            return true;
+        } else if (itemId == R.id.action_zoom) {
+            showZoomDialog();
+            return true;
+        } else if (itemId == R.id.action_gray_colors) {
+            showGrayColorsDialog();
             return true;
         } else if (itemId == R.id.action_about) {
             AboutWindow();
@@ -276,5 +256,169 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
             helpWindow.show();
         }
+    }
+
+    public void showZoomDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Zoom Level");
+
+        // Create the slider layout
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 40, 50, 10);
+
+        TextView label = new TextView(this);
+        label.setText("Adjust zoom level:");
+        layout.addView(label);
+
+        SeekBar seekBar = new SeekBar(this);
+        seekBar.setMax(100); // 0-100 scale
+        
+        // Get current zoom level and convert to slider scale (0-100)
+        float currentScale = centerImageView.getPhotoViewAttacher().getScale();
+        float minScale = centerImageView.getPhotoViewAttacher().getMinimumScale();
+        float maxScale = centerImageView.getPhotoViewAttacher().getMaximumScale();
+        
+        // Convert current scale to 0-100 range
+        int currentProgress = (int) ((currentScale - minScale) / (maxScale - minScale) * 100);
+        seekBar.setProgress(currentProgress);
+
+        TextView valueLabel = new TextView(this);
+        valueLabel.setText(String.format("%.1fx", currentScale));
+        
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    // Convert 0-100 range back to actual scale
+                    float scale = minScale + (progress / 100.0f) * (maxScale - minScale);
+                    valueLabel.setText(String.format("%.1fx", scale));
+                    centerImageView.getPhotoViewAttacher().setScale(scale, true);
+                    centerImageView.updatePicture();
+                    centerImageView.getPhotoViewAttacher().update();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        layout.addView(seekBar);
+        layout.addView(valueLabel);
+
+        builder.setView(layout);
+        builder.setPositiveButton("OK", null);
+        builder.setNegativeButton("Reset", (dialog, which) -> {
+            centerImageView.getPhotoViewAttacher().setScale(minScale, true);
+        });
+
+        builder.show();
+    }
+
+    public void showGrayColorsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Gray Colors");
+
+        // Create the layout for the gray gradient
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 40, 50, 10);
+
+        TextView label = new TextView(this);
+        label.setText(R.string.select_gray);
+        layout.addView(label);
+
+        // Add black and white buttons at the top
+        LinearLayout buttonLayout = new LinearLayout(this);
+        buttonLayout.setOrientation(LinearLayout.HORIZONTAL);
+        buttonLayout.setPadding(0, 20, 0, 10);
+
+        // Black button
+        TextView blackButton = new TextView(this);
+        blackButton.setText("B");
+        blackButton.setBackgroundColor(Color.BLACK);
+        blackButton.setTextColor(Color.WHITE);
+        blackButton.setGravity(android.view.Gravity.CENTER);
+        blackButton.setPadding(20, 20, 20, 20);
+        blackButton.setTextSize(16);
+        LinearLayout.LayoutParams blackParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        blackParams.setMargins(0, 0, 10, 0);
+        blackButton.setLayoutParams(blackParams);
+        blackButton.setOnClickListener(v -> {
+            currentPixelColor = Color.BLACK;
+            brushImageView.pushColor(currentPixelColor);
+            updateLeftGradient();
+        });
+
+        // White button
+        TextView whiteButton = new TextView(this);
+        whiteButton.setText("W");
+        whiteButton.setBackgroundColor(Color.WHITE);
+        whiteButton.setTextColor(Color.BLACK);
+        whiteButton.setGravity(android.view.Gravity.CENTER);
+        whiteButton.setPadding(20, 20, 20, 20);
+        whiteButton.setTextSize(16);
+        LinearLayout.LayoutParams whiteParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        whiteParams.setMargins(10, 0, 0, 0);
+        whiteButton.setLayoutParams(whiteParams);
+        whiteButton.setOnClickListener(v -> {
+            currentPixelColor = Color.WHITE;
+            brushImageView.pushColor(currentPixelColor);
+            updateLeftGradient();
+        });
+
+        buttonLayout.addView(blackButton);
+        buttonLayout.addView(whiteButton);
+        layout.addView(buttonLayout);
+
+        // Create the gray gradient ImageView
+        ImageView grayGradient = new ImageView(this);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 200);
+        params.setMargins(0, 20, 0, 20);
+        grayGradient.setLayoutParams(params);
+
+        // Create the gray gradient drawable (same as original)
+        final GradientDrawable drawableGray = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
+                new int[]{0xFF000000, 0xFFFFFFFF});
+        drawableGray.setShape(GradientDrawable.RECTANGLE);
+        drawableGray.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        grayGradient.setImageDrawable(drawableGray);
+        grayGradient.setDrawingCacheEnabled(true);
+
+        // Add touch listener to handle color selection
+        grayGradient.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_MOVE) {
+                int x = (int) event.getX();
+                int y = (int) event.getY();
+                
+                // Ensure coordinates are within bounds
+                if (x >= 0 && x < v.getWidth() && y >= 0 && y < v.getHeight()) {
+                    currentPixelColor = grayGradient.getDrawingCache().getPixel(x, y);
+                    brushImageView.pushColor(currentPixelColor);
+                    updateLeftGradient();
+                }
+            }
+            return true;
+        });
+
+        layout.addView(grayGradient);
+
+        builder.setView(layout);
+        builder.setPositiveButton("OK", null);
+        builder.show();
+    }
+
+    private void updateLeftGradient() {
+        imageViewLeft.setDrawingCacheEnabled(false);
+        final GradientDrawable drawableLeft = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
+                new int[]{0xFF000000, currentPixelColor, 0xFFFFFFFF});
+        drawableLeft.setShape(GradientDrawable.RECTANGLE);
+        drawableLeft.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        imageViewLeft.setImageDrawable(drawableLeft);
+        imageViewLeft.setDrawingCacheEnabled(true);
     }
 }
