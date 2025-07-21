@@ -21,6 +21,7 @@ import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -114,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
         centerImageView = findViewById(R.id.imageView_center);
         centerImageView.loadAsset("Gerald_G_Beach_Trip_2.svg");
+        centerImageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 
         centerImageView.setOnImageCommandsListener(brushImageView);
         centerImageView.setOnImageCallbackListener(centerImageView);
@@ -210,6 +212,9 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
                     })
                     .setNegativeButton(android.R.string.no, null).show();
             return true;
+        } else if (itemId == R.id.action_zoom) {
+            showZoomDialog();
+            return true;
         } else if (itemId == R.id.action_about) {
             AboutWindow();
             return true;
@@ -276,5 +281,65 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
             helpWindow.show();
         }
+    }
+
+    public void showZoomDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Zoom Level");
+
+        // Create the slider layout
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 40, 50, 10);
+
+        TextView label = new TextView(this);
+        label.setText("Adjust zoom level:");
+        layout.addView(label);
+
+        SeekBar seekBar = new SeekBar(this);
+        seekBar.setMax(100); // 0-100 scale
+        
+        // Get current zoom level and convert to slider scale (0-100)
+        float currentScale = centerImageView.getPhotoViewAttacher().getScale();
+        float minScale = centerImageView.getPhotoViewAttacher().getMinimumScale();
+        float maxScale = centerImageView.getPhotoViewAttacher().getMaximumScale();
+        
+        // Convert current scale to 0-100 range
+        int currentProgress = (int) ((currentScale - minScale) / (maxScale - minScale) * 100);
+        seekBar.setProgress(currentProgress);
+
+        TextView valueLabel = new TextView(this);
+        valueLabel.setText(String.format("%.1fx", currentScale));
+        
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    // Convert 0-100 range back to actual scale
+                    float scale = minScale + (progress / 100.0f) * (maxScale - minScale);
+                    valueLabel.setText(String.format("%.1fx", scale));
+                    centerImageView.getPhotoViewAttacher().setScale(scale, true);
+                    centerImageView.updatePicture();
+                    centerImageView.getPhotoViewAttacher().update();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        layout.addView(seekBar);
+        layout.addView(valueLabel);
+
+        builder.setView(layout);
+        builder.setPositiveButton("OK", null);
+        builder.setNegativeButton("Reset", (dialog, which) -> {
+            centerImageView.getPhotoViewAttacher().setScale(minScale, true);
+        });
+
+        builder.show();
     }
 }

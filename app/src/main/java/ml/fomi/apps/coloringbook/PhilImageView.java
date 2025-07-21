@@ -68,6 +68,10 @@ public class PhilImageView extends VectorImageView implements PhotoView
         photoViewAttacher.cleanup();
     }
 
+    public PhotoViewAttacher getPhotoViewAttacher() {
+        return photoViewAttacher;
+    }
+
     @Override
     public void loadAsset(String string) {
         super.loadAsset(string);
