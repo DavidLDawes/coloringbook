@@ -62,7 +62,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public static synchronized DataBaseHelper getHelper(Context context) {
         if (instance == null)
-            instance = new DataBaseHelper(context);
+            instance = new DataBaseHelper(context.getApplicationContext());
         return instance;
     }
 
@@ -86,6 +86,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLES.SECTORS_TABLE);
+        onCreate(sqLiteDatabase);
     }
 }

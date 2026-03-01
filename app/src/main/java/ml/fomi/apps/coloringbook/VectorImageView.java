@@ -10,7 +10,8 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PictureDrawable;
-import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
@@ -24,6 +25,7 @@ import com.pixplicity.sharp.SharpDrawable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
 import java.util.Random;
 
 import ml.fomi.apps.coloringbook.db.SectorsDAO;
@@ -124,8 +126,19 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
     @Override
     public void onSvgEnd(@NonNull Canvas canvas, @Nullable RectF bounds) {
         if (isEmptyDB) {
-            AddSectorsTask task = new AddSectorsTask((Activity) context);
-            task.execute((Void) null);
+            final WeakReference<Activity> activityRef = new WeakReference<>((Activity) context);
+            Executors.newSingleThreadExecutor().execute(() -> {
+                long result = sectorsDAO.init();
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Activity activity = activityRef.get();
+                    if (activity != null && !activity.isFinishing()) {
+                        if (result == -1)
+                            Log.e("MLogs", "Handsof: Error to save sectorsColors.");
+                        else
+                            Log.d("MLogs", "Handsof: Sectors saved.");
+                    }
+                });
+            });
             isEmptyDB = false;
         }
     }
@@ -262,30 +275,6 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
     }
 
     public abstract void initThis();
-
-    private class AddSectorsTask extends AsyncTask<Void, Void, Long> {
-
-        private final WeakReference<Activity> activityWeakRef;
-
-        public AddSectorsTask(Activity context) {
-            this.activityWeakRef = new WeakReference<>(context);
-        }
-
-        @Override
-        protected Long doInBackground(Void... voids) {
-            return sectorsDAO.init();
-        }
-
-        @Override
-        protected void onPostExecute(Long aLong) {
-            if (activityWeakRef.get() != null
-                    && !activityWeakRef.get().isFinishing()) {
-                if (aLong == -1)
-                    Log.e("MLogs", "Handsof: Error to save sectorsColors.");
-                else Log.d("MLogs", "Handsof: Sectors saved.");
-            }
-        }
-    }
 
     public Bitmap getShareBitmap(Drawable drawable) {
         int w = getResources().getDimensionPixelSize(ml.formi.apps.R.dimen.share_image_width_px);
