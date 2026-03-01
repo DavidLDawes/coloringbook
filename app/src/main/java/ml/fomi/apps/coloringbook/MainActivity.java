@@ -180,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
                 Intent myShareIntent = new Intent(Intent.ACTION_SEND);
                 myShareIntent.setType("image/png");
                 myShareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                myShareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 startActivity(Intent.createChooser(myShareIntent, "Share to ..."));
             }
             return true;

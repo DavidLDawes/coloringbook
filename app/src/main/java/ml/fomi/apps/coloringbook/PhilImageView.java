@@ -8,6 +8,8 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Environment;
+
+import androidx.core.content.FileProvider;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -94,8 +96,9 @@ public class PhilImageView extends VectorImageView implements PhotoView
     }
 
     public void undoColor() {
-        if (prevColor != -1 && prevColor != curSector) {
+        if (curSector >= 0 && prevColor != -1) {
             setSectorColor(curSector, prevColor);
+            prevColor = -1;
             updatePicture();
         }
     }
@@ -103,20 +106,20 @@ public class PhilImageView extends VectorImageView implements PhotoView
     public Uri doShare() {
         Uri uri = null;
         try {
-
-            File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+            File path = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
             File bmpFile = File.createTempFile("BigPhil", ".png", path);
-            FileOutputStream out = new FileOutputStream(bmpFile);
 
             Bitmap bmp = getShareBitmap(philImageView.getDrawable());
 
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
+            try (FileOutputStream out = new FileOutputStream(bmpFile)) {
+                bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
+            }
 
-            out.close();
-            uri = Uri.fromFile(bmpFile);
+            uri = FileProvider.getUriForFile(mContext,
+                    "ml.fomi.apps.coloringbook.fileprovider", bmpFile);
             Toast.makeText(mContext, String.format("Extracted into: %s", bmpFile.getAbsolutePath()), Toast.LENGTH_LONG).show();
 
-        } catch (Throwable t) {
+        } catch (Exception t) {
             t.printStackTrace();
             Toast.makeText(mContext, "Error occured while extracting bitmap", Toast.LENGTH_SHORT).show();
         }
@@ -154,11 +157,12 @@ public class PhilImageView extends VectorImageView implements PhotoView
 
     @Override
     public void onPhotoTap(android.widget.ImageView view, float x, float y) {
-        // Handle photo tap - can be used to trigger coloring at the tapped location
         // x and y are percentages (0.0 to 1.0) of the drawable dimensions
         int sect = getSector(x, y);
         if (sect >= 0) {  // Valid sector
             Log.d(TAG, "onPhotoTap: Sector: " + sect);
+            prevColor = getColorFromSector(sect);
+            curSector = sect;
             setSectorColor(sect, getOnImageCommandsListener().getCurrentColor());
             this.updatePicture();
         } else {

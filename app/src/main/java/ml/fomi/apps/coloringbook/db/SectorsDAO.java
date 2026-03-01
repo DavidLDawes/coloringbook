@@ -54,6 +54,7 @@ public class SectorsDAO extends dbsDAO {
         while (cursor.moveToNext()) {
             sectorsID.add(cursor.getInt(0));
         }
+        cursor.close();
 
         return res;
     }
@@ -105,6 +106,7 @@ public class SectorsDAO extends dbsDAO {
                 sectorsID.add(cursor.getInt(0));
                 sectors.add(cursor.getInt(1));
             }
+            cursor.close();
         }
         return sectors;
     }
