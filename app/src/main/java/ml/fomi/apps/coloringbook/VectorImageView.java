@@ -175,8 +175,7 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
             }
             paint.setColor(color);
         }
-        //return element;
-        return null;
+        return element;
     }
 
     @Override

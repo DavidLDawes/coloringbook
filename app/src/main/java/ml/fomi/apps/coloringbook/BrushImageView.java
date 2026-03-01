@@ -54,7 +54,7 @@ public class BrushImageView extends VectorImageView implements View.OnTouchListe
         setSectorColor(0, firstColorSector);
     }
 
-    private int getFirsSectorColor() {
+    private int getFirstSectorColor() {
         return getColorFromSector(0);
     }
 
@@ -65,7 +65,7 @@ public class BrushImageView extends VectorImageView implements View.OnTouchListe
         int color = getColorFromSector(sector);
 
         if (sector != 0 && sector != 0xFFFFFFFF && sector != prevSector) {
-            int c = getFirsSectorColor();
+            int c = getFirstSectorColor();
             prevSector = sector;
             setFirstColorSector(color);
             for (int i = sector; i >= 1; i--) {
@@ -85,7 +85,7 @@ public class BrushImageView extends VectorImageView implements View.OnTouchListe
     @Override
     public int getCurrentColor() {
         onPush = true;
-        return getFirsSectorColor();
+        return getFirstSectorColor();
     }
 
     void pushColor(int c) {

@@ -3,6 +3,8 @@ package ml.fomi.apps.coloringbook;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
@@ -62,14 +64,12 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         drawableGray.setShape(GradientDrawable.RECTANGLE);
         drawableGray.setGradientType(GradientDrawable.LINEAR_GRADIENT);
         imageViewGray.setImageDrawable(drawableGray);
-        imageViewGray.setDrawingCacheEnabled(true);
 
         final GradientDrawable drawableLeft = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
                 new int[]{0xFF000000, 0xFF00FF00, 0xFFFFFFFF});
         drawableLeft.setShape(GradientDrawable.RECTANGLE);
         drawableLeft.setGradientType(GradientDrawable.LINEAR_GRADIENT);
         imageViewLeft.setImageDrawable(drawableLeft);
-        imageViewLeft.setDrawingCacheEnabled(true);
 
         ImageView imageViewRight = findViewById(R.id.imageView_right);
         final GradientDrawable drawableRight = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
@@ -80,19 +80,15 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         drawableRight.setShape(GradientDrawable.RECTANGLE);
         drawableRight.setGradientType(GradientDrawable.LINEAR_GRADIENT);
         imageViewRight.setImageDrawable(drawableRight);
-        imageViewRight.setDrawingCacheEnabled(true);
 
         imageViewRight.setOnTouchListener((v, event) -> {
 
             touchView(v, event);
 
-            imageViewLeft.setDrawingCacheEnabled(false);
             final GradientDrawable drawableLeft1 = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
                     new int[]{0xFF000000, currentPixelColor, 0xFFFFFFFF});
             drawableLeft1.setShape(GradientDrawable.RECTANGLE);
             drawableLeft1.setGradientType(GradientDrawable.LINEAR_GRADIENT);
-
-            imageViewLeft.setDrawingCacheEnabled(true);
 
             imageViewLeft.setImageDrawable(drawableLeft1);
 
@@ -101,11 +97,8 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
         imageViewLeft.setOnTouchListener(this);
 
-        assert textViewLeftWhite != null;
-        textViewLeftWhite.setOnTouchListener(this);
-
-        assert textViewLeftBlack != null;
-        textViewLeftBlack.setOnTouchListener(this);
+        if (textViewLeftWhite != null) textViewLeftWhite.setOnTouchListener(this);
+        if (textViewLeftBlack != null) textViewLeftBlack.setOnTouchListener(this);
 
         imageViewGray.setOnTouchListener(this);
 
@@ -127,6 +120,14 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         return true;
     }
 
+    private int samplePixelFromView(View v, int x, int y) {
+        Bitmap bitmap = Bitmap.createBitmap(v.getWidth(), v.getHeight(), Bitmap.Config.ARGB_8888);
+        v.draw(new Canvas(bitmap));
+        int color = bitmap.getPixel(x, y);
+        bitmap.recycle();
+        return color;
+    }
+
     private void touchView(View v, MotionEvent event) {
 
         final int fieldWidth = 15;
@@ -143,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
                 if (v instanceof ImageView) {
 
-                    currentPixelColor = v.getDrawingCache().getPixel(x, y);
+                    currentPixelColor = samplePixelFromView(v, x, y);
 
                 } else if (v instanceof TextView) {
                     //TextView section
@@ -231,11 +232,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         final TextView tx = linearLayout.findViewById(R.id.about_textView);
 
         String[] about_ar = getResources().getStringArray(R.array.text_about);
-        String about_string = "";
-        for (String str : about_ar) {
-            about_string += str;
-        }
-        about_string += "Version injection removed, breaking a build.  ";
+        String about_string = String.join("", about_ar);
 
         tx.setAutoLinkMask(Linkify.EMAIL_ADDRESSES);
         tx.setText(about_string);

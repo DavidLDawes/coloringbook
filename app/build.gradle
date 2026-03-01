@@ -26,12 +26,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.3"
-    }
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
     lint {
         baseline = file("lint-baseline.xml")
     }
