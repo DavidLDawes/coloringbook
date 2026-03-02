@@ -184,14 +184,15 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == R.id.action_share) {
-            Uri uri = centerImageView.doShare();
-            if (uri != null) {
-                Intent myShareIntent = new Intent(Intent.ACTION_SEND);
-                myShareIntent.setType("image/png");
-                myShareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                myShareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                startActivity(Intent.createChooser(myShareIntent, "Share to ..."));
-            }
+            centerImageView.doShare(uri -> {
+                if (uri != null) {
+                    Intent myShareIntent = new Intent(Intent.ACTION_SEND);
+                    myShareIntent.setType("image/png");
+                    myShareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                    myShareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(Intent.createChooser(myShareIntent, "Share to ..."));
+                }
+            });
             return true;
         } else if (itemId == R.id.action_undo) {
             centerImageView.undoColor();

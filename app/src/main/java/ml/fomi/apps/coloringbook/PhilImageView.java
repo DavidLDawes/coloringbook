@@ -6,8 +6,11 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.core.content.FileProvider;
 import android.util.AttributeSet;
@@ -22,6 +25,8 @@ import com.github.DavidLDawes.photoview.PhotoView;
 import com.github.DavidLDawes.photoview.PhotoViewAttacher;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import ml.fomi.apps.coloringbook.db.DataBaseHelper;
 import ml.fomi.apps.coloringbook.db.SectorsDAO;
@@ -47,6 +52,7 @@ public class PhilImageView extends VectorImageView implements PhotoView
     private int prevColor = -1;
 
     private Matrix curMatrix;
+    private ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
 
     public PhilImageView(Context context) {
         super(context);
@@ -66,22 +72,31 @@ public class PhilImageView extends VectorImageView implements PhotoView
         initThis();
     }
 
-    void cleanup() {
-        photoViewAttacher.cleanup();
+    @Override
+    public void cleanup() {
+        if (photoViewAttacher != null) {
+            photoViewAttacher.cleanup();
+        }
+        ioExecutor.shutdown();
         super.cleanup();
     }
 
     private static DataBaseHelper.SECTORS sectorsForFile(String filename) {
         switch (filename) {
-            case "alien.svg": return DataBaseHelper.SECTORS.SECTORS_ALIEN;
-            case "ul.svg":    return DataBaseHelper.SECTORS.SECTORS_UL;
-            default:          return DataBaseHelper.SECTORS.SECTORS_PHIL;
+            case "alien.svg":                        return DataBaseHelper.SECTORS.SECTORS_ALIEN;
+            case "ul.svg":                           return DataBaseHelper.SECTORS.SECTORS_UL;
+            case "roller-skates-svgrepo-com.svg":    return DataBaseHelper.SECTORS.SECTORS_SKATES;
+            default:                                 return DataBaseHelper.SECTORS.SECTORS_PHIL;
         }
     }
 
     @Override
     public void loadAsset(String string) {
         super.loadAsset(string);
+
+        if (ioExecutor.isShutdown()) {
+            ioExecutor = Executors.newSingleThreadExecutor();
+        }
 
         setSectorsDAO(new SectorsDAO(mContext, sectorsForFile(string)));
 
@@ -112,27 +127,50 @@ public class PhilImageView extends VectorImageView implements PhotoView
         }
     }
 
-    public Uri doShare() {
-        Uri uri = null;
-        try {
-            File path = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-            File bmpFile = File.createTempFile("BigPhil", ".png", path);
+    public interface ShareCallback {
+        void onSharePrepared(Uri uri);
+    }
 
-            Bitmap bmp = getShareBitmap(philImageView.getDrawable());
+    public void doShare(final ShareCallback callback) {
+        Drawable drawable = getDrawable();
+        if (drawable == null) {
+            callback.onSharePrepared(null);
+            return;
+        }
 
-            try (FileOutputStream out = new FileOutputStream(bmpFile)) {
-                bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
+        // Creating the bitmap and drawing to it must happen on the UI thread
+        final Bitmap bmp = getShareBitmap(drawable);
+
+        ioExecutor.execute(() -> {
+            Uri uri = null;
+            try {
+                File path = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+                File bmpFile = File.createTempFile("BigPhil", ".png", path);
+
+                try (FileOutputStream out = new FileOutputStream(bmpFile)) {
+                    bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
+                }
+
+                uri = FileProvider.getUriForFile(mContext,
+                        "ml.fomi.apps.coloringbook.fileprovider", bmpFile);
+
+                final String absolutePath = bmpFile.getAbsolutePath();
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(mContext, String.format("Extracted into: %s", absolutePath), Toast.LENGTH_LONG).show();
+                });
+
+            } catch (Exception t) {
+                Log.e(TAG, "Error sharing", t);
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(mContext, "Error occured while extracting bitmap", Toast.LENGTH_SHORT).show();
+                });
+            } finally {
+                bmp.recycle();
             }
 
-            uri = FileProvider.getUriForFile(mContext,
-                    "ml.fomi.apps.coloringbook.fileprovider", bmpFile);
-            Toast.makeText(mContext, String.format("Extracted into: %s", bmpFile.getAbsolutePath()), Toast.LENGTH_LONG).show();
-
-        } catch (Exception t) {
-            t.printStackTrace();
-            Toast.makeText(mContext, "Error occured while extracting bitmap", Toast.LENGTH_SHORT).show();
-        }
-        return uri;
+            final Uri finalUri = uri;
+            new Handler(Looper.getMainLooper()).post(() -> callback.onSharePrepared(finalUri));
+        });
     }
 
     @Override

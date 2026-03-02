@@ -22,7 +22,37 @@ java {
     }
 }
 
+// 1. Register the Javadoc task
+tasks.register('androidJavadocs', Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    dependsOn "assembleRelease"
+    exclude '**/R.html', '**/R.*.html', '**/index.html'
+
+    // Basic options to prevent errors on newer JDKs
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.encoding = 'UTF-8'
+}
+
+// 2. Register the Jar tasks
+tasks.register('androidJavadocsJar', Jar) {
+    dependsOn 'androidJavadocs'
+    archiveClassifier.set('javadoc')
+    // Link to the output of the javadoc task
+    from tasks.named('androidJavadocs').map { it.destinationDir }
+}
+
+tasks.register('sourceJar', Jar) {
+    archiveClassifier.set("sources")
+    from android.sourceSets.main.java.srcDirs
+}
+
+// 3. Configure Publishing and final Task properties
 afterEvaluate {
+    // Late-bind the classpath for Javadoc to avoid "bootClasspath" errors
+    tasks.named("androidJavadocs") {
+        classpath += files(android.bootClasspath)
+    }
+
     publishing {
         publications {
             release(MavenPublication) {
@@ -30,9 +60,9 @@ afterEvaluate {
                 artifactId = 'library'
                 version = '2.3.0'
 
-                // Adds javadocs and sources as separate jars.
-                artifact androidJavadocsJar
-                artifact(sourceJar)
+                // Reference tasks by their provider to avoid 'unknown property' errors
+                artifact tasks.named('androidJavadocsJar').get()
+                artifact tasks.named('sourceJar').get()
 
                 pom {
                     name = 'PhotoView'
@@ -59,26 +89,4 @@ afterEvaluate {
             }
         }
     }
-}
-
-tasks.register('androidJavadocs', Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    android.libraryVariants.configureEach { variant ->
-        if (variant.name == 'release') {
-            owner.classpath += variant.javaCompileProvider.get().classpath
-        }
-    }
-    exclude '**/R.html', '**/R.*.html', '**/index.html'
-}
-
-tasks.register('androidJavadocsJar', Jar) {
-    dependsOn androidJavadocs
-    archiveClassifier.set('javadoc')
-    from androidJavadocs.destinationDir
-}
-
-tasks.register('sourceJar', Jar) {
-    from android.sourceSets.main.java.srcDirs
-    archiveClassifier.set("sources")
 }
