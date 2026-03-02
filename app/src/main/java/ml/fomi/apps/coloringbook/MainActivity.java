@@ -32,6 +32,13 @@ import ml.formi.apps.R;
 
 public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
+    private static final String[] COLORING_FILES = {
+        "Gerald_G_Beach_Trip_2.svg", "alien.svg", "ul.svg", "roller-skates-svgrepo-com.svg"
+    };
+    private static final String[] COLORING_FILE_NAMES = {
+        "Beach Trip", "Alien", "UL", "Skates"
+    };
+
     private PhilImageView centerImageView;
     private BrushImageView brushImageView;
 
@@ -212,6 +219,15 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
                         Toast.makeText(MainActivity.this, "All white cells colored!", Toast.LENGTH_SHORT).show();
                     })
                     .setNegativeButton(android.R.string.no, null).show();
+            return true;
+        } else if (itemId == R.id.action_select_image) {
+            new AlertDialog.Builder(this)
+                .setTitle(R.string.select_image)
+                .setItems(COLORING_FILE_NAMES, (dialog, which) -> {
+                    centerImageView.cleanup();
+                    centerImageView.loadAsset(COLORING_FILES[which]);
+                })
+                .show();
             return true;
         } else if (itemId == R.id.action_about) {
             AboutWindow();

@@ -71,11 +71,19 @@ public class PhilImageView extends VectorImageView implements PhotoView
         super.cleanup();
     }
 
+    private static DataBaseHelper.SECTORS sectorsForFile(String filename) {
+        switch (filename) {
+            case "alien.svg": return DataBaseHelper.SECTORS.SECTORS_ALIEN;
+            case "ul.svg":    return DataBaseHelper.SECTORS.SECTORS_UL;
+            default:          return DataBaseHelper.SECTORS.SECTORS_PHIL;
+        }
+    }
+
     @Override
     public void loadAsset(String string) {
         super.loadAsset(string);
 
-        setSectorsDAO(new SectorsDAO(mContext, DataBaseHelper.SECTORS.SECTORS_PHIL));
+        setSectorsDAO(new SectorsDAO(mContext, sectorsForFile(string)));
 
         curMatrix = new Matrix();
         photoViewAttacher = new PhotoViewAttacher(philImageView);

@@ -38,7 +38,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public enum SECTORS {
         SECTORS_BRUSH(0),
-        SECTORS_PHIL(1);
+        SECTORS_PHIL(1),
+        SECTORS_ALIEN(2),
+        SECTORS_UL(3);
 
         private final int i;
 
