@@ -25,6 +25,8 @@ import com.pixplicity.sharp.SharpDrawable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.Random;
 
@@ -62,6 +64,7 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
     private ArrayList<Float> brushSectors;
 
     private SectorsDAO sectorsDAO;
+    private ExecutorService dbExecutor;
 
     private boolean isEmptyDB = false;
 
@@ -127,7 +130,7 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
     public void onSvgEnd(@NonNull Canvas canvas, @Nullable RectF bounds) {
         if (isEmptyDB) {
             final WeakReference<Activity> activityRef = new WeakReference<>((Activity) context);
-            Executors.newSingleThreadExecutor().execute(() -> {
+            dbExecutor.execute(() -> {
                 long result = sectorsDAO.init();
                 new Handler(Looper.getMainLooper()).post(() -> {
                     Activity activity = activityRef.get();
@@ -211,7 +214,7 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
     void setSectorColor(int i, int c) {
         if (sectorsColors != null && c != sectorsColors.get(i)) {
             sectorsColors.set(i, c);
-            sectorsDAO.update(i, c);
+            dbExecutor.execute(() -> sectorsDAO.update(i, c));
         }
     }
 
@@ -294,25 +297,34 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
 
     public void setSectorsDAO(SectorsDAO sectorsDAO) {
         this.sectorsDAO = sectorsDAO;
+        dbExecutor = Executors.newSingleThreadExecutor();
+    }
+
+    public void cleanup() {
+        if (dbExecutor != null) {
+            dbExecutor.shutdown();
+        }
     }
 
     public void clearAll() {
         for (int i = 0; i < sectorsColors.size(); i++) {
             sectorsColors.set(i, 0xFFFFFFFF);
-            sectorsDAO.update(i, 0xFFFFFFFF);
         }
+        dbExecutor.execute(() -> sectorsDAO.clearAllWhite());
         updatePicture();
     }
 
     public void colorAllWhite() {
         Random random = new Random();
-        for (int i = 0; i < sectorsColors.size(); i++)
+        for (int i = 0; i < sectorsColors.size(); i++) {
             if (sectorsColors.get(i) == Color.WHITE) {
                 int c = Color.argb(255, random.nextInt(256),
                         random.nextInt(256), random.nextInt(256));
                 sectorsColors.set(i, c);
-                sectorsDAO.update(i, c);
             }
+        }
+        final List<Integer> snapshot = new ArrayList<>(sectorsColors);
+        dbExecutor.execute(() -> sectorsDAO.updateBatch(snapshot));
         updatePicture();
     }
 

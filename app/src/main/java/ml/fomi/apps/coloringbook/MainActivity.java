@@ -164,6 +164,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
     protected void onDestroy() {
         super.onDestroy();
         centerImageView.cleanup();
+        brushImageView.cleanup();
     }
 
     @Override

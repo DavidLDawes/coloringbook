@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Rius on 29.03.17.
@@ -61,16 +62,35 @@ public class SectorsDAO extends dbsDAO {
 
     public long update(int sectorID, int color) {
         ContentValues values = new ContentValues();
-        sectors.set(sectorID, color);
         values.put(DataBaseHelper.COLOR_COLUMN, color);
-
-        sectors = getSectors();
-
-        return (long) database.update(tableName.toString(), values,
+        return database.update(tableName.toString(), values,
                 WHERE_ID_ROW_EQUALS,
-                new String[]{
-                        String.valueOf(sectorsID.get(sectorID))
-                });
+                new String[]{ String.valueOf(sectorsID.get(sectorID)) });
+    }
+
+    public void clearAllWhite() {
+        ContentValues values = new ContentValues();
+        values.put(DataBaseHelper.COLOR_COLUMN, 0xFFFFFFFF);
+        database.update(tableName.toString(), values,
+                WHERE_MAP_SECTORS_EQUALS,
+                new String[]{ sectorType.toString() });
+    }
+
+    public void updateBatch(List<Integer> colors) {
+        database.beginTransaction();
+        try {
+            ContentValues values = new ContentValues();
+            for (int i = 0; i < colors.size(); i++) {
+                values.clear();
+                values.put(DataBaseHelper.COLOR_COLUMN, colors.get(i));
+                database.update(tableName.toString(), values,
+                        WHERE_ID_ROW_EQUALS,
+                        new String[]{ String.valueOf(sectorsID.get(i)) });
+            }
+            database.setTransactionSuccessful();
+        } finally {
+            database.endTransaction();
+        }
     }
 
     public int delete(int sector) {
