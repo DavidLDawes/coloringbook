@@ -46,8 +46,10 @@ public class BrushImageView extends VectorImageView implements View.OnTouchListe
 
     @Override
     public void loadAsset(String string) {
-        super.loadAsset(string);
+        // setSectorsDAO must be called BEFORE super.loadAsset() because the SVG parsing
+        // triggered by super.loadAsset() calls onSvgStart() which needs sectorsDAO.
         setSectorsDAO(new SectorsDAO(mContext, DataBaseHelper.SECTORS.SECTORS_BRUSH));
+        super.loadAsset(string);
     }
 
     private void setFirstColorSector(int firstColorSector) {

@@ -21,10 +21,10 @@ import android.widget.ImageView;
 
 import com.pixplicity.sharp.OnSvgElementListener;
 import com.pixplicity.sharp.Sharp;
-import com.pixplicity.sharp.SharpDrawable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,7 +43,7 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
 
     private PictureDrawable sharpDrawable;
 
-    private VectorImageView vectorImageView;
+    private final VectorImageView vectorImageView;
 
     private OnImageCommandsListener onImageCommandsListener;
     private OnImageCallbackListener onImageCallbackListener;
@@ -96,18 +96,15 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
         Sharp mSharp = Sharp.loadAsset(context.getAssets(), string);
         mSharp.setOnElementListener(vectorImageView);
 
-        mSharp.getDrawable(vectorImageView, new Sharp.DrawableCallback() {
-            @Override
-            public void onDrawableReady(SharpDrawable sd) {
-                sharpDrawable = sd;
-                vectorImageView.setImageDrawable(sharpDrawable);
+        mSharp.getDrawable(vectorImageView, sd -> {
+            sharpDrawable = sd;
+            vectorImageView.setImageDrawable(sharpDrawable);
 
-                if (onImageCallbackListener != null)
-                    onImageCallbackListener.imageCallback();
+            if (onImageCallbackListener != null)
+                onImageCallbackListener.imageCallback();
 
-                createMap();
-                updatePicture();
-            }
+            createMap();
+            updatePicture();
         });
 
     }
@@ -167,11 +164,14 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
                     brushSectors.add(elB / canB);
                 }
 
-                if (isEmptyDB) {
+                if (isEmptyDB || sectorId >= sectorsColors.size()) {
+                    // DB has no entry for this sector — generate a random color
                     Random random = new Random();
                     color = Color.argb(255, random.nextInt(256),
                             random.nextInt(256), random.nextInt(256));
                     sectorsColors.add(color);
+                    isEmptyDB = true;
+                    sectorId++;
                 } else {
                     color = sectorsColors.get(sectorId++);
                 }
@@ -307,9 +307,7 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
     }
 
     public void clearAll() {
-        for (int i = 0; i < sectorsColors.size(); i++) {
-            sectorsColors.set(i, 0xFFFFFFFF);
-        }
+        Collections.fill(sectorsColors, 0xFFFFFFFF);
         dbExecutor.execute(() -> sectorsDAO.clearAllWhite());
         updatePicture();
     }

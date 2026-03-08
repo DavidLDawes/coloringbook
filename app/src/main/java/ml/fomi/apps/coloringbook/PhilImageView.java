@@ -92,13 +92,15 @@ public class PhilImageView extends VectorImageView implements PhotoView
 
     @Override
     public void loadAsset(String string) {
-        super.loadAsset(string);
-
         if (ioExecutor.isShutdown()) {
             ioExecutor = Executors.newSingleThreadExecutor();
         }
 
+        // setSectorsDAO must be called BEFORE super.loadAsset() because the SVG parsing
+        // triggered by super.loadAsset() calls onSvgStart() which needs sectorsDAO.
         setSectorsDAO(new SectorsDAO(mContext, sectorsForFile(string)));
+
+        super.loadAsset(string);
 
         curMatrix = new Matrix();
         photoViewAttacher = new PhotoViewAttacher(philImageView);
