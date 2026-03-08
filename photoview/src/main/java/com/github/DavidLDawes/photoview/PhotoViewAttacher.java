@@ -619,7 +619,7 @@ public class PhotoViewAttacher implements View.OnTouchListener,
             RectF mTempSrc = new RectF(0, 0, drawableWidth, drawableHeight);
             RectF mTempDst = new RectF(0, 0, viewWidth, viewHeight);
             if ((int) mBaseRotation % 180 != 0) {
-                mTempSrc = new RectF(0, 0, drawableHeight, drawableWidth);
+                mTempSrc = new RectF(0, 0, drawableWidth, drawableHeight);
             }
             switch (mScaleType) {
                 case FIT_CENTER:

@@ -41,7 +41,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         SECTORS_PHIL(1),
         SECTORS_ALIEN(2),
         SECTORS_UL(3),
-        SECTORS_SKATES(4);
+        SECTORS_SKATES(4),
+        SECTORS_PANDA(5);
 
         private final int i;
 

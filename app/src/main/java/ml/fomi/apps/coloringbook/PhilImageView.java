@@ -86,6 +86,7 @@ public class PhilImageView extends VectorImageView implements PhotoView
             case "alien.svg":                        return DataBaseHelper.SECTORS.SECTORS_ALIEN;
             case "ul.svg":                           return DataBaseHelper.SECTORS.SECTORS_UL;
             case "roller-skates-svgrepo-com.svg":    return DataBaseHelper.SECTORS.SECTORS_SKATES;
+            case "skate-panda.svg":                  return DataBaseHelper.SECTORS.SECTORS_PANDA;
             default:                                 return DataBaseHelper.SECTORS.SECTORS_PHIL;
         }
     }

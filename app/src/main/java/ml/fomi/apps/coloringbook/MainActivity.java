@@ -33,10 +33,11 @@ import ml.formi.apps.R;
 public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
     private static final String[] COLORING_FILES = {
-        "Gerald_G_Beach_Trip_2.svg", "alien.svg", "ul.svg", "roller-skates-svgrepo-com.svg"
+        "Gerald_G_Beach_Trip_2.svg", "alien.svg", "ul.svg", "roller-skates-svgrepo-com.svg",
+        "skate-panda.svg"
     };
     private static final String[] COLORING_FILE_NAMES = {
-        "Beach Trip", "Alien", "UL", "Skates"
+        "Beach Trip", "Alien", "UL", "Skates", "Skate Panda"
     };
 
     private PhilImageView centerImageView;
