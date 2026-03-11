@@ -210,12 +210,22 @@ public class PhotoViewAttacher implements View.OnTouchListener,
                     mViewTapListener.onViewTap(mImageView, x, y);
                 }
                 if (displayRect != null) {
-                    // Check to see if the user tapped on the photo
-                    if (displayRect.contains(x, y)) {
-                        float xResult = (x - displayRect.left)
-                            / displayRect.width();
-                        float yResult = (y - displayRect.top)
-                            / displayRect.height();
+                    // When the image is zoomed in, it may extend beyond the view bounds.
+                    // A tap anywhere in the view is then on the image, so we clamp the
+                    // tap coordinates to the display rect and compute fractions from there.
+                    // This ensures onPhotoTap fires at any zoom level.
+                    final int viewWidth  = getImageViewWidth(mImageView);
+                    final int viewHeight = getImageViewHeight(mImageView);
+                    final boolean imageCoversView =
+                            displayRect.left <= 0 && displayRect.right  >= viewWidth &&
+                            displayRect.top  <= 0 && displayRect.bottom >= viewHeight;
+
+                    if (displayRect.contains(x, y) || imageCoversView) {
+                        // Clamp tap to display rect so fractions are always in [0,1]
+                        float clampedX = Math.max(displayRect.left,  Math.min(displayRect.right,  x));
+                        float clampedY = Math.max(displayRect.top,   Math.min(displayRect.bottom, y));
+                        float xResult = (clampedX - displayRect.left) / displayRect.width();
+                        float yResult = (clampedY - displayRect.top)  / displayRect.height();
                         if (mPhotoTapListener != null) {
                             mPhotoTapListener.onPhotoTap(mImageView, xResult, yResult);
                         }
@@ -650,37 +660,44 @@ public class PhotoViewAttacher implements View.OnTouchListener,
         float deltaX = 0, deltaY = 0;
         final int viewHeight = getImageViewHeight(mImageView);
         if (height <= viewHeight) {
+            // Image fits vertically — centre it
             deltaY = switch (mScaleType) {
                 case FIT_START -> -rect.top;
                 case FIT_END -> viewHeight - height - rect.top;
                 default -> (viewHeight - height) / 2 - rect.top;
             };
             mVerticalScrollEdge = VERTICAL_EDGE_BOTH;
-        } else if (rect.top > 0) {
-            mVerticalScrollEdge = VERTICAL_EDGE_TOP;
-            deltaY = -rect.top;
-        } else if (rect.bottom < viewHeight) {
-            mVerticalScrollEdge = VERTICAL_EDGE_BOTTOM;
-            deltaY = viewHeight - rect.bottom;
         } else {
+            // Image is taller than the view — allow panning, but don't let
+            // empty space appear at top or bottom
             mVerticalScrollEdge = VERTICAL_EDGE_NONE;
+            if (rect.top > 0) {
+                mVerticalScrollEdge = VERTICAL_EDGE_TOP;
+                deltaY = -rect.top;
+            } else if (rect.bottom < viewHeight) {
+                mVerticalScrollEdge = VERTICAL_EDGE_BOTTOM;
+                deltaY = viewHeight - rect.bottom;
+            }
         }
         final int viewWidth = getImageViewWidth(mImageView);
         if (width <= viewWidth) {
+            // Image fits horizontally — centre it
             deltaX = switch (mScaleType) {
                 case FIT_START -> -rect.left;
                 case FIT_END -> viewWidth - width - rect.left;
                 default -> (viewWidth - width) / 2 - rect.left;
             };
             mHorizontalScrollEdge = HORIZONTAL_EDGE_BOTH;
-        } else if (rect.left > 0) {
-            mHorizontalScrollEdge = HORIZONTAL_EDGE_LEFT;
-            deltaX = -rect.left;
-        } else if (rect.right < viewWidth) {
-            deltaX = viewWidth - rect.right;
-            mHorizontalScrollEdge = HORIZONTAL_EDGE_RIGHT;
         } else {
+            // Image is wider than the view — allow panning
             mHorizontalScrollEdge = HORIZONTAL_EDGE_NONE;
+            if (rect.left > 0) {
+                mHorizontalScrollEdge = HORIZONTAL_EDGE_LEFT;
+                deltaX = -rect.left;
+            } else if (rect.right < viewWidth) {
+                deltaX = viewWidth - rect.right;
+                mHorizontalScrollEdge = HORIZONTAL_EDGE_RIGHT;
+            }
         }
         // Finally actually translate the matrix
         mSuppMatrix.postTranslate(deltaX, deltaY);
@@ -797,6 +814,7 @@ public class PhotoViewAttacher implements View.OnTouchListener,
             }
         }
     }
+
     public void cleanup() {
     }
 }

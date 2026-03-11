@@ -20,6 +20,7 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <RelativeLayout
+        android:id="@+id/content_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
@@ -79,22 +80,6 @@
 
         </LinearLayout>
 
-
-        <ml.fomi.apps.coloringbook.PhilImageView
-            android:id="@+id/imageView_center"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_below="@+id/imageView_brush"
-            android:layout_marginStart="5dp"
-            android:layout_marginEnd="40dp"
-            android:layout_toEndOf="@id/ll_left"
-            android:adjustViewBounds="true"
-            android:background="@color/colorBackground"
-            android:padding="@dimen/padPhilImage"
-            android:scaleType="centerInside"
-            android:src="@drawable/sandglass"
-            tools:ignore="ContentDescription" />
-
         <ImageView
             android:id="@+id/imageView_right"
             android:layout_width="35dp"
@@ -102,6 +87,20 @@
             android:layout_alignParentEnd="true"
             android:layout_below="@+id/imageView_brush"
             android:background="#ff0000ff"
+            tools:ignore="ContentDescription" />
+
+        <ml.fomi.apps.coloringbook.PhilImageView
+            android:id="@+id/imageView_center"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/imageView_brush"
+            android:layout_toEndOf="@id/ll_left"
+            android:layout_toStartOf="@id/imageView_right"
+            android:adjustViewBounds="true"
+            android:background="@color/colorBackground"
+            android:padding="@dimen/padPhilImage"
+            android:scaleType="centerInside"
+            android:src="@drawable/sandglass"
             tools:ignore="ContentDescription" />
 
     </RelativeLayout>
