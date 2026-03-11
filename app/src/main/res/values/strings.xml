@@ -12,6 +12,10 @@
     <string name="double_tap_for_zooming">Double tap on the image for zooming</string>
     <string name="help_image_description">Help image showing a finger tapping</string>
     <string name="new_checkbox">Show on start</string>
+    <string name="show_brush">Show color picker</string>
+    <string name="hide_brush">Hide color picker</string>
+    <string name="set_zoom">Set zoom</string>
+    <string name="zoom_label">Zoom: %1$.1f×</string>
     <string-array name="text_about">
         <item>Coloring book\n</item>
         <item>@string/app_name</item>

@@ -40,6 +40,10 @@ public class PhilImageView extends VectorImageView implements PhotoView
         .OnTouchListener, VectorImageView.OnImageCallbackListener, OnMatrixChangedListener, OnPhotoTapListener {
 
     private static final String TAG = "PhilImageView";
+    private static final float MAX_SCALE = 18f;
+    private static final float MID_SCALE = 6f;
+    private static final float MIN_SCALE = 1f;
+
     private PhotoViewAttacher photoViewAttacher;
     private PhilImageView philImageView;
 
@@ -52,6 +56,7 @@ public class PhilImageView extends VectorImageView implements PhotoView
     private int prevColor = -1;
 
     private Matrix curMatrix;
+    private final Matrix curMatrixInverse = new Matrix();
     private ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
 
     public PhilImageView(Context context) {
@@ -106,8 +111,10 @@ public class PhilImageView extends VectorImageView implements PhotoView
         curMatrix = new Matrix();
         photoViewAttacher = new PhotoViewAttacher(philImageView);
         photoViewAttacher.getDisplayMatrix(curMatrix);
-        photoViewAttacher.setMaximumScale(18);
-        photoViewAttacher.setMediumScale(6);
+        curMatrix.invert(curMatrixInverse);
+        photoViewAttacher.setMaximumScale(MAX_SCALE);
+        photoViewAttacher.setMediumScale(MID_SCALE);
+        photoViewAttacher.setMinimumScale(MIN_SCALE);
         photoViewAttacher.setOnPhotoTapListener(philImageView);
         photoViewAttacher.setOnMatrixChangeListener(philImageView);
 
@@ -129,6 +136,44 @@ public class PhilImageView extends VectorImageView implements PhotoView
             updatePicture();
         }
     }
+
+    // ── Zoom helpers ────────────────────────────────────────────────────────────
+
+    /** Returns the current zoom scale (≥ 1.0). */
+    public float getZoom() {
+        if (photoViewAttacher == null) return MIN_SCALE;
+        return photoViewAttacher.getScale();
+    }
+
+    /** Returns the maximum allowed zoom scale. */
+    public float getMaxZoom() {
+        return MAX_SCALE;
+    }
+
+    /**
+     * Applies a new zoom level centred on the middle of the currently visible image area.
+     * The display matrix is updated immediately, so hit-testing via {@code onMatrixChanged}
+     * stays correct automatically.
+     *
+     * @param scale desired scale in the range [MIN_SCALE, MAX_SCALE]
+     * @param animate whether to animate the transition
+     */
+    public void setZoom(float scale, boolean animate) {
+        if (photoViewAttacher == null) return;
+        float clamped = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+
+        // Centre the zoom on the middle of the currently displayed image rect.
+        RectF displayRect = photoViewAttacher.getDisplayRect();
+        if (displayRect != null) {
+            float focalX = displayRect.centerX();
+            float focalY = displayRect.centerY();
+            photoViewAttacher.setScale(clamped, focalX, focalY, animate);
+        } else {
+            photoViewAttacher.setScale(clamped, animate);
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
 
     public interface ShareCallback {
         void onSharePrepared(Uri uri);
@@ -197,7 +242,10 @@ public class PhilImageView extends VectorImageView implements PhotoView
 
     @Override
     public void onMatrixChanged(RectF rect) {
+        // Keep curMatrix and its inverse in sync so hit-testing is always correct,
+        // regardless of zoom level or whether the color picker is visible.
         photoViewAttacher.getDisplayMatrix(curMatrix);
+        curMatrix.invert(curMatrixInverse);
     }
 
     @Override
@@ -207,16 +255,34 @@ public class PhilImageView extends VectorImageView implements PhotoView
 
     @Override
     public void onPhotoTap(android.widget.ImageView view, float x, float y) {
-        // x and y are percentages (0.0 to 1.0) of the drawable dimensions
-        int sect = getSector(x, y);
-        if (sect >= 0) {  // Valid sector
-            Log.d(TAG, "onPhotoTap: Sector: " + sect);
+        // x and y are fractions (0.0–1.0) of the displayed image rect within the view.
+        // Map them to raw view-pixel coordinates using the display rect, then apply the
+        // inverse display matrix to get SVG-space pixel coordinates for hit-testing.
+        RectF displayRect = photoViewAttacher.getDisplayRect();
+        if (displayRect == null) {
+            Log.d(TAG, "onPhotoTap: null displayRect");
+            return;
+        }
+
+        // Convert fraction → view pixel
+        float viewX = displayRect.left + x * displayRect.width();
+        float viewY = displayRect.top  + y * displayRect.height();
+
+        // Map view pixel → SVG pixel via the inverse of the current display matrix
+        float[] pt = {viewX, viewY};
+        curMatrixInverse.mapPoints(pt);
+        float svgX = pt[0];
+        float svgY = pt[1];
+
+        int sect = getSector(svgX, svgY);
+        if (sect >= 0) {
+            Log.d(TAG, "onPhotoTap: Sector: " + sect + " svgPt=(" + svgX + "," + svgY + ")");
             prevColor = getColorFromSector(sect);
             curSector = sect;
             setSectorColor(sect, getOnImageCommandsListener().getCurrentColor());
             this.updatePicture();
         } else {
-            Log.d(TAG, "onPhotoTap: Invalid sector at (" + x + ", " + y + ")");
+            Log.d(TAG, "onPhotoTap: Invalid sector at svgPt=(" + svgX + "," + svgY + ")");
         }
     }
 }

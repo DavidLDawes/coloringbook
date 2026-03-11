@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.widget.SeekBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDialog;
@@ -40,12 +41,23 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         "Beach Trip", "Alien", "UL", "Skates", "Skate Panda"
     };
 
+    // SeekBar range: 0–170 maps to zoom 1.0×–18.0× in 0.1× steps
+    private static final float ZOOM_MIN   = 1.0f;
+    private static final float ZOOM_STEP  = 0.1f;
+    private static final int   ZOOM_STEPS = 170;   // (18.0 - 1.0) / 0.1
+
     private PhilImageView centerImageView;
     private BrushImageView brushImageView;
 
     private ImageView imageViewLeft;
+    private ImageView imageViewRight;
+    private LinearLayout llLeft;
+
+    private boolean brushVisible = true;
 
     private int currentPixelColor = 0;
+
+    private Menu mainMenu;
 
     SharedPreferences sPref;
 
@@ -62,10 +74,11 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         getSupportActionBar().setDisplayUseLogoEnabled(true);
 
         TextView textViewLeftBlack = findViewById(R.id.textView_black);
-        ImageView imageViewGray = findViewById(R.id.imageView_gray);
+        ImageView imageViewGray    = findViewById(R.id.imageView_gray);
         TextView textViewLeftWhite = findViewById(R.id.textView_white);
-        imageViewLeft = findViewById(R.id.imageView_left);
-
+        imageViewLeft  = findViewById(R.id.imageView_left);
+        imageViewRight = findViewById(R.id.imageView_right);
+        llLeft         = findViewById(R.id.ll_left);
 
         final GradientDrawable drawableGray = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
                 new int[]{0xFF000000, 0xFFFFFFFF});
@@ -79,35 +92,27 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
         drawableLeft.setGradientType(GradientDrawable.LINEAR_GRADIENT);
         imageViewLeft.setImageDrawable(drawableLeft);
 
-        ImageView imageViewRight = findViewById(R.id.imageView_right);
         final GradientDrawable drawableRight = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
                 new int[]{0xFFFF0000, 0xFFFF7F00,
                         0xFFFFFF00, 0xFF00FF00, 0xFF00FFFF,
                         0xFF0000FF, 0xFFFF00FF});
-
         drawableRight.setShape(GradientDrawable.RECTANGLE);
         drawableRight.setGradientType(GradientDrawable.LINEAR_GRADIENT);
         imageViewRight.setImageDrawable(drawableRight);
 
         imageViewRight.setOnTouchListener((v, event) -> {
-
             touchView(v, event);
-
-            final GradientDrawable drawableLeft1 = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
+            final GradientDrawable d = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
                     new int[]{0xFF000000, currentPixelColor, 0xFFFFFFFF});
-            drawableLeft1.setShape(GradientDrawable.RECTANGLE);
-            drawableLeft1.setGradientType(GradientDrawable.LINEAR_GRADIENT);
-
-            imageViewLeft.setImageDrawable(drawableLeft1);
-
+            d.setShape(GradientDrawable.RECTANGLE);
+            d.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+            imageViewLeft.setImageDrawable(d);
             return true;
         });
 
         imageViewLeft.setOnTouchListener(this);
-
         if (textViewLeftWhite != null) textViewLeftWhite.setOnTouchListener(this);
         if (textViewLeftBlack != null) textViewLeftBlack.setOnTouchListener(this);
-
         imageViewGray.setOnTouchListener(this);
 
         brushImageView = findViewById(R.id.imageView_brush);
@@ -121,6 +126,73 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
 
         centerImageView.post(this::helpOnStartWindow);
     }
+
+    // ── Color-picker visibility ──────────────────────────────────────────────
+
+    private void setBrushVisible(boolean visible) {
+        brushVisible = visible;
+        int v = visible ? View.VISIBLE : View.GONE;
+        brushImageView.setVisibility(v);
+        llLeft.setVisibility(v);
+        imageViewRight.setVisibility(v);
+        if (mainMenu != null) {
+            mainMenu.findItem(R.id.action_toggle_brush)
+                    .setTitle(visible ? R.string.hide_brush : R.string.show_brush);
+        }
+    }
+
+    // ── Zoom dialog ──────────────────────────────────────────────────────────
+
+    private void showZoomDialog() {
+        float currentZoom = centerImageView.getZoom();
+        float maxZoom     = centerImageView.getMaxZoom();
+
+        // Build a simple layout: label + SeekBar
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        layout.setPadding(pad, pad, pad, pad);
+
+        final TextView label = new TextView(this);
+        label.setText(getString(R.string.zoom_label, currentZoom));
+        layout.addView(label);
+
+        final SeekBar seekBar = new SeekBar(this);
+        seekBar.setMax(ZOOM_STEPS);
+        int initialProgress = Math.round((currentZoom - ZOOM_MIN) / ZOOM_STEP);
+        seekBar.setProgress(Math.max(0, Math.min(ZOOM_STEPS, initialProgress)));
+        layout.addView(seekBar);
+
+        // Preview zoom live as the user drags
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                float zoom = ZOOM_MIN + progress * ZOOM_STEP;
+                label.setText(getString(R.string.zoom_label, zoom));
+                if (fromUser) {
+                    centerImageView.setZoom(zoom, false);
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.set_zoom)
+                .setView(layout)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    float zoom = ZOOM_MIN + seekBar.getProgress() * ZOOM_STEP;
+                    centerImageView.setZoom(zoom, true);
+                })
+                .setNegativeButton(android.R.string.cancel, (dialog, which) -> {
+                    // Restore the zoom that was active when the dialog opened
+                    centerImageView.setZoom(currentZoom, true);
+                })
+                .setOnCancelListener(dialog -> centerImageView.setZoom(currentZoom, true))
+                .show();
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
@@ -137,32 +209,22 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
     }
 
     private void touchView(View v, MotionEvent event) {
-
         final int fieldWidth = 15;
-
-        int y = (int) event.getY();
+        int y    = (int) event.getY();
         int yImg = v.getMeasuredHeight();
-
-        int x = (int) event.getX();
+        int x    = (int) event.getX();
         int xImg = v.getMeasuredWidth();
 
         if ((y >= -fieldWidth) && (y < (yImg + fieldWidth)) && (x >= -fieldWidth) && (x < (xImg + fieldWidth))) {
-
             if (y >= 0 && y < yImg && x >= 0 && x < xImg) {
-
                 if (v instanceof ImageView) {
-
                     currentPixelColor = samplePixelFromView(v, x, y);
-
                 } else if (v instanceof TextView) {
-                    //TextView section
                     if (((TextView) v).getText().toString().equals("B"))
                         currentPixelColor = Color.BLACK;
-
                     if (((TextView) v).getText().toString().equals("W"))
                         currentPixelColor = Color.WHITE;
                 }
-
                 brushImageView.pushColor(currentPixelColor);
             }
         }
@@ -178,6 +240,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        mainMenu = menu;
         return true;
     }
 
@@ -197,6 +260,12 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
             return true;
         } else if (itemId == R.id.action_undo) {
             centerImageView.undoColor();
+            return true;
+        } else if (itemId == R.id.action_toggle_brush) {
+            setBrushVisible(!brushVisible);
+            return true;
+        } else if (itemId == R.id.action_set_zoom) {
+            showZoomDialog();
             return true;
         } else if (itemId == R.id.action_clear_all) {
             new AlertDialog.Builder(this)
@@ -239,23 +308,14 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
     }
 
     public void AboutWindow() {
-
         final Dialog aboutWindow = new Dialog(this);
-
         LinearLayout linearLayout = (LinearLayout) getLayoutInflater().inflate(R.layout.about_dialog, null);
-
         aboutWindow.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
         aboutWindow.setContentView(linearLayout);
-
         final TextView tx = linearLayout.findViewById(R.id.about_textView);
-
         String[] about_ar = getResources().getStringArray(R.array.text_about);
-        String about_string = String.join("", about_ar);
-
         tx.setAutoLinkMask(Linkify.EMAIL_ADDRESSES);
-        tx.setText(about_string);
-
+        tx.setText(String.join("", about_ar));
         linearLayout.setOnTouchListener((view, motionEvent) -> {
             aboutWindow.dismiss();
             return false;
@@ -264,33 +324,25 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener {
     }
 
     public void helpOnStartWindow() {
-
         final String isShowStr = "isShowPref";
         sPref = getPreferences(MODE_PRIVATE);
         boolean isShow = sPref.getBoolean(isShowStr, true);
-
         if (isShow) {
-
             final AppCompatDialog helpWindow = new AppCompatDialog(this);
             final LinearLayout linearLayout = (LinearLayout) getLayoutInflater().inflate(R.layout.help_on_start, null);
             helpWindow.requestWindowFeature(Window.FEATURE_NO_TITLE);
             helpWindow.setContentView(linearLayout);
-
             final AppCompatCheckBox checkBox = linearLayout.findViewById(R.id.help_view_checkBox);
-
             checkBox.setChecked(isShow);
-
             checkBox.setOnCheckedChangeListener((compoundButton, b) -> {
                 SharedPreferences.Editor editor = sPref.edit();
                 editor.putBoolean(isShowStr, b);
                 editor.apply();
             });
-
             linearLayout.setOnTouchListener((view, motionEvent) -> {
                 helpWindow.dismiss();
                 return false;
             });
-
             helpWindow.show();
         }
     }

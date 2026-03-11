@@ -186,16 +186,24 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
             canvas, @Nullable Paint paint) {
     }
 
-    int getSector(float x, float y) {
-        int lX = Math.round(x * actW);
-        int lY = Math.round(y * actH);
-        int curSector;
-        if (lX >= 0 && lY < bitmapMap.getHeight() && lX < bitmapMap.getWidth() && lY >= 0) {
-            curSector = ((bitmapMap.getPixel(lX, lY) << 16) >>> 16) - 1;
+    /**
+     * Look up the sector at the given SVG-space pixel coordinates.
+     * The caller is responsible for converting view/screen coordinates into
+     * SVG-space pixels (e.g. via the inverse of the PhotoView display matrix).
+     *
+     * @param svgX X coordinate in SVG pixel space
+     * @param svgY Y coordinate in SVG pixel space
+     * @return sector index (≥ 0), or 0xFFFFFFFF if outside all sectors
+     */
+    int getSector(float svgX, float svgY) {
+        int lX = Math.round(svgX);
+        int lY = Math.round(svgY);
+        if (lX >= 0 && lY >= 0 && lX < bitmapMap.getWidth() && lY < bitmapMap.getHeight()) {
+            int pixel = bitmapMap.getPixel(lX, lY);
+            int curSector = ((pixel << 16) >>> 16) - 1;
             return curSector;
         }
-        curSector = 0xFFFFFFFF;
-        return curSector;
+        return 0xFFFFFFFF;
     }
 
     int getSector(final ImageView imageView, float x, float y) {
@@ -248,31 +256,26 @@ public abstract class VectorImageView extends AppCompatImageView implements OnSv
     }
 
     private void createMap() {
-
         actW = sharpDrawable.getPicture().getWidth();
+        actH = sharpDrawable.getPicture().getHeight();
 
-        if (onImageCallbackListener != null) {
+        // Draw each sector path as a solid filled region with its index+1 as the color.
+        // Anti-aliasing is OFF so boundary pixels are unambiguously one sector or another.
+        // We draw directly onto a fresh bitmap — NOT via sharpDrawable.draw() — so only
+        // filled interiors are encoded, never strokes or SVG decoration.
+        Paint paint = new Paint();
+        paint.setAntiAlias(false);
+        paint.setStyle(Paint.Style.FILL);
 
-            actH = sharpDrawable.getPicture().getHeight();
+        bitmapMap = Bitmap.createBitmap(actW, actH, Bitmap.Config.ARGB_8888);
+        bitmapMap.eraseColor(Color.TRANSPARENT);
 
-            Paint paint = new Paint();
-            paint.setAntiAlias(false);
-
-            Canvas canvas = sharpDrawable.getPicture().beginRecording(actW, actH);
-
-            for (int i = 0; i < sectorsPaths.size(); i++) {
-                paint.setColor(i + 1);
-                paint.setAlpha(0xFF);
-                canvas.drawPath(sectorsPaths.get(i), paint);
-            }
-
-            sharpDrawable.getPicture().endRecording();
-
-            bitmapMap = Bitmap.createBitmap(actW, actH, Bitmap.Config.ARGB_8888);
-            bitmapMap.eraseColor(0x00000000);
-
-            Canvas bitmapCanvas = new Canvas(bitmapMap);
-            sharpDrawable.draw(bitmapCanvas);
+        Canvas bitmapCanvas = new Canvas(bitmapMap);
+        for (int i = 0; i < sectorsPaths.size(); i++) {
+            // Encode sector index as color: sector 0 → 0x00000001, sector 1 → 0x00000002, …
+            // Alpha must be 0xFF so the pixel is opaque and readable via getPixel().
+            paint.setColor((i + 1) | 0xFF000000);
+            bitmapCanvas.drawPath(sectorsPaths.get(i), paint);
         }
     }
 
